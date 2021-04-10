@@ -1,7 +1,11 @@
-const numbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
-const operators = ["+", "-", "*", "/"];
-const highestPriorityOperators = ["*", "/"];
-const lowestPriorityOperators = ["+", "-"];
+const numberLexemes = [
+  "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", 
+  "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+0", 
+  "-1", "-2", "-3", "-4", "-5", "-6", "-7", "-8", "-9", "-0"
+];
+const operatorLexemes = ["+", "-", "*", "/"];
+const openBracketLexema = "(";
+const closeBracketLexema = ")";
 
 /**
  * Является ли лексема числом?
@@ -9,8 +13,8 @@ const lowestPriorityOperators = ["+", "-"];
  * @returns {boolean}
  */
 const isNumber = function(lexema) {
-  return numbers
-  .some(number => number === lexema); 
+  return numberLexemes
+    .some(number => number === lexema); 
 }
 
 /**
@@ -19,7 +23,7 @@ const isNumber = function(lexema) {
  * @returns {boolean}
  */
 const isOpenBracket = function(lexema) {
-  return lexema === "(";
+  return lexema === openBracketLexema;
 }
 
 /**
@@ -28,7 +32,7 @@ const isOpenBracket = function(lexema) {
  * @returns {boolean}
  */
 const isCloseBracket = function(lexema) {
-  return lexema === ")";
+  return lexema === closeBracketLexema;
 }
 
 /**
@@ -37,22 +41,8 @@ const isCloseBracket = function(lexema) {
  * @returns {boolean}
  */
 const isOperator = function(lexema) {
-  return operators
+  return operatorLexemes
     .some(operator => operator === lexema);
 }
 
-/**
- * Является ли приоритет первого оператора больше или равен приоритету второго?
- * @param {string} operator1 - первый оператор 
- * @param {string} operator2 - второй оператор
- * @returns {boolean}
- */
-const firstOperatorHasGreaterOrEqualPriority = function(operator1, operator2) {
-  const firstOperatorHasLowestPriority = lowestPriorityOperators
-    .some(operator => operator === operator1);
-  const secondOperatorHasHighestPriority = highestPriorityOperators
-    .some(operator => operator === operator2);    
-  return !(firstOperatorHasLowestPriority && secondOperatorHasHighestPriority);
-}
-
-export default { isNumber, isOpenBracket, isCloseBracket, isOperator, firstOperatorHasGreaterOrEqualPriority }
+export default { isNumber, isOpenBracket, isCloseBracket, isOperator }

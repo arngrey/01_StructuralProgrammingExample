@@ -1,5 +1,45 @@
 import Lexema from "./lexema.js";
+import Operator from "./operator.js";
 import Stack from "./stack.js";
+import Symbol from "./symbol.js";
+
+/**
+ * Парсит математическое выражение в инфиксной нотации, возвращая массив лексем.
+ * Возвращает undefined в случае ошибки.
+ * @example (-3 * 2) + 1 ===> ["(", "-3", "*", "2", ")", "+", "1"]
+ * @param {string} expression - математическое выражение в инфиксной нотации
+ * @returns {Array} - массив лексем
+ */
+const toLexemes = function(expression) {
+  let result = [];
+
+  let i = 0;
+
+  while (i < expression.length) {
+    let currentSymbol = expression[i];
+    let nextSymbol = expression[i + 1];
+    let nextNextSymbol = expression[i + 2];
+
+    if (Symbol.isAnyBracket(currentSymbol)) {
+      result.push(currentSymbol);
+      i++;
+    } else if (Symbol.isSpace(currentSymbol) && Symbol.isOperator(nextSymbol) && Symbol.isSpace(nextNextSymbol)) {
+      result.push(nextSymbol);
+      i += 3;
+    } else if (Symbol.isNumber(currentSymbol)) {
+      result.push(currentSymbol);
+      i++;
+    } else if (Symbol.isUnaryOperator(currentSymbol) && Symbol.isNumber(nextSymbol)) {
+      result.push(currentSymbol + nextSymbol);
+      i += 2;
+    } else {
+      // Неизвестная последовательность символов
+      return undefined;
+    }
+  }
+
+  return result;
+}
 
 /**
  * Возвращает математическое выражение в обратной польской нотации.
@@ -8,18 +48,18 @@ import Stack from "./stack.js";
  * @returns {string}
  */
 const toReversedPolishNotation = function(expression) {
-  let result = "";
+  let result = [];
   let stack = [];
   
-  const lexemes = expression.split("");
+  const lexemes = toLexemes(expression);
   let i = 0;
 
   while (lexemes[i] !== undefined) {
     const lexema = lexemes[i];
 
     if (Lexema.isNumber(lexema)) {
-      // Число — добавляем в строку вывода.
-      result += lexema;
+      // Число — добавляем в выходную очередь.
+      result.push(lexema);
     } else if (Lexema.isOpenBracket(lexema)) {
       // Открывающая скобка — помещаем в стек.
       Stack.push(stack, lexema);
@@ -30,15 +70,15 @@ const toReversedPolishNotation = function(expression) {
       let stackTopLexema = Stack.top(stack);
       let stackIsEmpty = Stack.isEmpty(stack);
       let stackTopLexemaIsOperator = !stackIsEmpty && Lexema.isOperator(stackTopLexema);
-      let stackTopOperatorHasHigherPriorityThanCurrent = stackTopLexemaIsOperator && Lexema.firstOperatorHasGreaterOrEqualPriority(stackTopLexema, lexema);
+      let stackTopOperatorHasHigherPriorityThanCurrent = stackTopLexemaIsOperator && Operator.firstOperatorHasGreaterOrEqualPriorityThanSecond(stackTopLexema, lexema);
       while (stackTopOperatorHasHigherPriorityThanCurrent) {
         // Перекладываем O2 из стека в выходную очередь.
-        result += Stack.pop(stack);
+        result.push(Stack.pop(stack));
 
         stackTopLexema = Stack.top(stack);
         stackIsEmpty = Stack.isEmpty(stack);
         stackTopLexemaIsOperator = !stackIsEmpty && Lexema.isOperator(stackTopLexema);
-        stackTopOperatorHasHigherPriorityThanCurrent = stackTopLexemaIsOperator && Lexema.firstOperatorHasGreaterOrEqualPriority(stackTopLexema, lexema);             
+        stackTopOperatorHasHigherPriorityThanCurrent = stackTopLexemaIsOperator && Operator.firstOperatorHasGreaterOrEqualPriorityThanSecond(stackTopLexema, lexema);             
       }
 
       // Помещаем O1 в стек.
@@ -53,13 +93,12 @@ const toReversedPolishNotation = function(expression) {
       // Если стек закончился до того, встретилась открывающая скобка — в выражении содержится ошибка.
       if (stackIsEmpty) {
         // В выражении ошибка
-          console.log("Error: Missed open bracket.");
           return undefined;
       }
 
       while (!stackTopLexemaIsOpenBracket) {
         // Перекладываем лексемы-операторы из стека в выходную очередь.
-        result += Stack.pop(stack);
+        result.push(Stack.pop(stack));
 
         stackTopLexema = Stack.top(stack);
         stackIsEmpty = Stack.isEmpty(stack);
@@ -68,7 +107,6 @@ const toReversedPolishNotation = function(expression) {
         // Если стек закончился до того, встретилась открывающая скобка — в выражении содержится ошибка.
         if (stackIsEmpty) {
           // В выражении ошибка
-          console.log("Error: Missed open bracket.");
           return undefined;
         }
       }
@@ -79,12 +117,10 @@ const toReversedPolishNotation = function(expression) {
       }
     } else {
       // Ни одна из вышеперечисленных - ошибка
-      console.log("Error: Unknown lexema.");
       return undefined;
     }
 
     i++;
-    console.log(result, stack);
   }
 
   // Если во входной строке больше не осталось лексем:
@@ -96,14 +132,13 @@ const toReversedPolishNotation = function(expression) {
 
   if (stackTopLexemaIsBracket) {
     // В выражении допущена ошибка.
-    console.log("Error: Missed bracket.");
     return undefined;
   }
 
   // Пока есть операторы в стеке:
   while (!stackIsEmpty) {
     // Перекладываем оператор из стека в выходную очередь.
-    result += Stack.pop(stack);
+    result.push(Stack.pop(stack));
     
     stackTopLexema = Stack.top(stack);
     stackIsEmpty = Stack.isEmpty(stack);
@@ -113,12 +148,11 @@ const toReversedPolishNotation = function(expression) {
 
     if (stackTopLexemaIsBracket) {
       // В выражении допущена ошибка.
-      console.log("Error: Missed bracket.");
       return undefined;
     }    
   }
 
-  return result;
+  return result.join(" ");
 }
 
 /**
@@ -129,7 +163,7 @@ const toReversedPolishNotation = function(expression) {
 const evaluate = function(expressionInReversedPolishNotation) {
   let stack = [];
 
-  const lexemes = expressionInReversedPolishNotation.split("");
+  const lexemes = expressionInReversedPolishNotation.split(" ");
   let i = 0;
 
   while (lexemes[i] !== undefined) {
@@ -149,7 +183,6 @@ const evaluate = function(expressionInReversedPolishNotation) {
     }
 
     i++;
-    console.log(stack);
   }
 
   // После полной обработки входного набора символов результат вычисления выражения лежит на вершине стека.
@@ -158,6 +191,7 @@ const evaluate = function(expressionInReversedPolishNotation) {
 
 /**
  * Вычислить значение примитивного выражения
+ * Возвращает undefined в случае ошибки
  * @param {string} operator - оператор
  * @param {string} operand1 - первый операнд
  * @param {string} operand2 - второй операнд
