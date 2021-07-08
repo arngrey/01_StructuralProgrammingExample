@@ -1,4 +1,4 @@
-# 01_StructuredProgrammingExample
+# StructuredProgrammingExample
 
 ## This is example of structured programming paradigm:
 1. Has no GOTO operators.
